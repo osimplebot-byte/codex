@@ -1,0 +1,73 @@
+{
+  "name": "Evolution - Incoming Messages",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evolution/incoming",
+        "options": {
+          "responseCode": 200,
+          "responseData": "={{$json}}"
+        }
+      },
+      "id": "Webhook Trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const message = $json.message || {};\nconst ts = message.timestamp ? Number(message.timestamp) : Date.now();\nconst timestamp = ts > 1e12 ? new Date(ts).toISOString() : new Date(ts * 1000).toISOString();\nreturn [{\n  direction: 'inbound',\n  instance: $headers['x-evolution-instance'],\n  whatsapp_message_id: message.id,\n  from: message.from,\n  to: message.to,\n  body: message.body,\n  type: message.type,\n  timestamp,\n  raw_payload: $json\n}];"
+      },
+      "id": "Normalize Payload",
+      "name": "Normalize Payload",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [520, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": "public",
+        "table": "whatsapp_messages",
+        "columns": "direction,instance,whatsapp_message_id,from,to,body,type,timestamp,raw_payload"
+      },
+      "id": "Persist Supabase",
+      "name": "Persist Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [780, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Supabase"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Payload": {
+      "main": [
+        [
+          {
+            "node": "Persist Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

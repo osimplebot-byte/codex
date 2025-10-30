@@ -59,3 +59,37 @@ O dashboard é organizado em abas, como se fossem aplicativos diferentes dentro 
 - IA treinada com base nas informações do próprio cliente, garantindo atendimento personalizado.
 - Suporte contínuo para dúvidas rápidas ou ajustes mais profundos.
 
+
+## Integração Evolution API
+
+- Consulte `docs/integration/evolution-api-setup.md` para configuração detalhada da instância Evolution, webhooks n8n e Supabase.
+- As definições de tabelas e funções SQL estão em `supabase/schema.sql`.
+- Workflows do n8n podem ser importados a partir dos arquivos `n8n/*.workflow.json`.
+- O servidor Express (`src/server.js`) expõe o endpoint `GET /status` que o frontend utiliza para renderizar o painel de conexão.
+
+### Executar servidor de status
+
+```bash
+cp .env.example .env # preencha as variáveis
+npm install
+npm run dev
+```
+
+O endpoint `GET /status` retorna:
+
+```json
+{
+  "data": [
+    {
+      "instance": "cliente-pizzaria",
+      "status": "CONNECTED",
+      "lastCheckedAt": "2024-03-04T12:00:00.000Z",
+      "lastConnectedAt": "2024-03-04T11:50:00.000Z",
+      "attemptingReconnect": false,
+      "metadata": { "raw": { /* payload Evolution */ } }
+    }
+  ]
+}
+```
+
+O frontend pode mapear `status` para os cards "Desconectado", "Conectando" e "Conectado".
