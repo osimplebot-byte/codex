@@ -59,3 +59,7 @@ O dashboard é organizado em abas, como se fossem aplicativos diferentes dentro 
 - IA treinada com base nas informações do próprio cliente, garantindo atendimento personalizado.
 - Suporte contínuo para dúvidas rápidas ou ajustes mais profundos.
 
+## Próximos Passos Técnicos
+
+Para implementar a infraestrutura necessária (Supabase, n8n, Evolution API e deploy no HostGator), siga o guia em [docs/infrastructure-setup.md](docs/infrastructure-setup.md).
+
