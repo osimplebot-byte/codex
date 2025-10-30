@@ -1,0 +1,174 @@
+{
+  "name": "Evolution - Outgoing Messages",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evolution/outgoing",
+        "options": {
+          "responseCode": 202,
+          "responseData": "={\n  \"status\": $json.status,\n  \"evolutionResponse\": $json.evolutionResponse\n}"
+        }
+      },
+      "id": "Outgoing Webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [220, 340]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json;\nif (!payload.instance || !payload.to || !payload.body) {\n  throw new Error('Campos obrigatórios: instance, to, body');\n}\nreturn [{\n  direction: 'outbound',\n  instance: payload.instance,\n  to: payload.to,\n  body: payload.body,\n  type: payload.type || 'text',\n  metadata: payload.metadata || {}\n}];"
+      },
+      "id": "Validate Payload",
+      "name": "Validate Payload",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [480, 340]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "schema": "public",
+        "table": "integration_settings",
+        "filters": [
+          {
+            "column": "instance",
+            "operator": "equal",
+            "value": "={{$json.instance}}"
+          }
+        ],
+        "additionalFields": {
+          "limit": 1
+        }
+      },
+      "id": "Load Credentials",
+      "name": "Load Credentials",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [740, 340],
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "const original = $item(0).$node['Validate Payload'].json;\nconst credentials = $json || {};\nconst instanceKey = credentials.evolution_instance_key || original.instance;\nconst token = credentials.evolution_token || $env.EVOLUTION_API_TOKEN;\nif (!instanceKey || !token) {\n  throw new Error('Credenciais Evolution ausentes');\n}\nreturn [{\n  direction: original.direction,\n  instance: original.instance,\n  from: original.from || original.instance,\n  evolution_instance_key: instanceKey,\n  evolution_token: token,\n  to: original.to,\n  body: original.body,\n  type: original.type,\n  metadata: original.metadata\n}];"
+      },
+      "id": "Prepare Message",
+      "name": "Prepare Message",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [980, 340]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": "public",
+        "table": "whatsapp_messages",
+        "columns": "direction,instance,from,to,body,type,metadata"
+      },
+      "id": "Log Supabase",
+      "name": "Log Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1220, 200],
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{$env.EVOLUTION_API_BASE_URL}}/message/sendText/{{$json.evolution_instance_key}}",
+        "options": {},
+        "sendBody": true,
+        "bodyParametersJson": "={\n  \"number\": $json.to,\n  \"text\": $json.body\n}",
+        "authentication": "headerAuth",
+        "headerParameters": "={\n  \"Authorization\": `Bearer ${$json.evolution_token}`,\n  \"X-Evolution-Instance\": $json.evolution_instance_key\n}"
+      },
+      "id": "Send Evolution",
+      "name": "Send Evolution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1220, 480]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{\n  status: $json.status || 'QUEUED',\n  evolutionResponse: $json\n}];"
+      },
+      "id": "Prepare Response",
+      "name": "Prepare Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1480, 340]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Payload": {
+      "main": [
+        [
+          {
+            "node": "Load Credentials",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Credentials": {
+      "main": [
+        [
+          {
+            "node": "Prepare Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Message": {
+      "main": [
+        [
+          {
+            "node": "Log Supabase",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Evolution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Evolution": {
+      "main": [
+        [
+          {
+            "node": "Prepare Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

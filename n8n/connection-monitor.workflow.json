@@ -1,0 +1,236 @@
+{
+  "name": "Evolution - Monitor & Reconnect",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": "*/1 * * * *"
+      },
+      "id": "Cron",
+      "name": "Cron",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const list = ($env.EVOLUTION_INSTANCES || '').split(',').map(i => i.trim()).filter(Boolean);\nconst fallback = $env.EVOLUTION_DEFAULT_INSTANCE || null;\nconst instances = list.length > 0 ? list : fallback ? [fallback] : [];\nreturn instances.map(instance => ({ json: { instance } }));"
+      },
+      "id": "Prepare Instances",
+      "name": "Prepare Instances",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "schema": "public",
+        "table": "integration_settings",
+        "filters": [
+          {
+            "column": "instance",
+            "operator": "equal",
+            "value": "={{$json.instance}}"
+          }
+        ],
+        "additionalFields": {
+          "limit": 1
+        }
+      },
+      "id": "Load Credentials",
+      "name": "Load Credentials",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [640, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "const instance = $item(0).$node['Prepare Instances'].json.instance;\nconst credentials = $json || {};\nconst instanceKey = credentials.evolution_instance_key || instance;\nconst token = credentials.evolution_token || $env.EVOLUTION_API_TOKEN;\nif (!instanceKey || !token) {\n  throw new Error(`Credenciais ausentes para ${instance}`);\n}\nreturn [{ json: { instance, evolution_instance_key: instanceKey, evolution_token: token } }];"
+      },
+      "id": "Prepare Request",
+      "name": "Prepare Request",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.EVOLUTION_API_BASE_URL}}/instance/{{$json.evolution_instance_key}}/status",
+        "authentication": "headerAuth",
+        "headerParameters": "={\n  \"Authorization\": `Bearer ${$json.evolution_token}`,\n  \"X-Evolution-Instance\": $json.evolution_instance_key\n}"
+      },
+      "id": "Get Status",
+      "name": "Get Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1080, 180]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.state}}",
+              "operation": "notEqual",
+              "value2": "CONNECTED"
+            }
+          ]
+        }
+      },
+      "id": "Check Connected",
+      "name": "Check Connected",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1300, 180]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.EVOLUTION_API_BASE_URL}}/instance/{{$item(0).$node['Prepare Request'].json.evolution_instance_key}}/restart",
+        "authentication": "headerAuth",
+        "headerParameters": "={\n  \"Authorization\": `Bearer ${$item(0).$node['Prepare Request'].json.evolution_token}`,\n  \"X-Evolution-Instance\": $item(0).$node['Prepare Request'].json.evolution_instance_key\n}"
+      },
+      "id": "Restart Instance",
+      "name": "Restart Instance",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1520, 60]
+    },
+    {
+      "parameters": {
+        "functionCode": "const requestMeta = $item(0).$node['Prepare Request'].json;\nconst state = $json.state || 'DISCONNECTED';\nreturn [{\n  instance: requestMeta.instance,\n  status: state === 'CONNECTED' ? 'CONNECTED' : 'CONNECTING',\n  last_checked_at: new Date().toISOString(),\n  last_connected_at: $json.lastConnectedAt || null,\n  attempting_reconnect: state !== 'CONNECTED',\n  metadata: { raw: $json, evolution_instance_key: requestMeta.evolution_instance_key }\n}];"
+      },
+      "id": "Normalize Status",
+      "name": "Normalize Status",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1520, 360]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": "public",
+        "table": "whatsapp_connection_status",
+        "columns": "instance,status,last_checked_at,last_connected_at,attempting_reconnect,metadata",
+        "additionalFields": {
+          "upsertConflict": "instance"
+        }
+      },
+      "id": "Upsert Status",
+      "name": "Upsert Status",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1760, 360],
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Supabase"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cron": {
+      "main": [
+        [
+          {
+            "node": "Prepare Instances",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Instances": {
+      "main": [
+        [
+          {
+            "node": "Load Credentials",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Credentials": {
+      "main": [
+        [
+          {
+            "node": "Prepare Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Request": {
+      "main": [
+        [
+          {
+            "node": "Get Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Status": {
+      "main": [
+        [
+          {
+            "node": "Check Connected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Connected": {
+      "main": [
+        [
+          {
+            "node": "Restart Instance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "false": [
+        [
+          {
+            "node": "Normalize Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restart Instance": {
+      "main": [
+        [
+          {
+            "node": "Normalize Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Status": {
+      "main": [
+        [
+          {
+            "node": "Upsert Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
