@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Preview UX - Painel do Atendente Virtual</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="layout">
+      <section class="context">
+        <header class="brand">
+          <img
+            class="brand__logo"
+            src="assets/omr-logo.svg"
+            alt="Logotipo OMR Studio"
+          />
+          <div>
+            <p class="brand__tagline">Painel do Atendente Virtual</p>
+            <h1>Preview da Experiência do Painel</h1>
+          </div>
+        </header>
+        <p>
+          Explore as telas principais do painel responsivo que permite configurar
+          o atendente virtual diretamente do celular. Navegue pelas etapas para
+          conhecer o fluxo completo.
+        </p>
+        <section class="palette" aria-label="Paleta de cores da marca">
+          <h2>Identidade Visual</h2>
+          <div class="swatches">
+            <article class="swatch" data-hex="#ff3da6">
+              <span></span>
+              <p>Pink Pulse</p>
+              <small>#FF3DA6</small>
+            </article>
+            <article class="swatch" data-hex="#1f2937">
+              <span></span>
+              <p>Graphite Ink</p>
+              <small>#1F2937</small>
+            </article>
+            <article class="swatch" data-hex="#fef2f8">
+              <span></span>
+              <p>Light Bloom</p>
+              <small>#FEF2F8</small>
+            </article>
+            <article class="swatch" data-hex="#8d5bff">
+              <span></span>
+              <p>Violet Flow</p>
+              <small>#8D5BFF</small>
+            </article>
+          </div>
+        </section>
+        <div class="legend">
+          <h2>Lembretes rápidos</h2>
+          <ul>
+            <li><span class="dot dot-primary"></span> Fluxo guiado para novos clientes.</li>
+            <li><span class="dot dot-accent"></span> Componentes interativos disponíveis.</li>
+            <li><span class="dot dot-muted"></span> Espaços de apoio e dicas do suporte.</li>
+          </ul>
+        </div>
+        <div class="note">
+          <strong>Dica:</strong> Clique nas abas abaixo do smartphone para alternar
+          entre as telas e visualizar o conteúdo de cada etapa.
+        </div>
+      </section>
+      <section class="phone">
+        <header class="phone__header">
+          <div class="status">
+            <span class="status__signal"></span>
+            <span class="status__time">09:41</span>
+            <span class="status__battery"></span>
+          </div>
+          <div class="header__title">Atendente Virtual</div>
+        </header>
+        <div class="phone__body">
+          <nav class="tabs" aria-label="Navegação das telas">
+            <button class="tab is-active" data-screen="login">Login</button>
+            <button class="tab" data-screen="dashboard">Dashboard</button>
+            <button class="tab" data-screen="simulator">Simulador</button>
+            <button class="tab" data-screen="connection">Conexão</button>
+            <button class="tab" data-screen="help">Ajuda</button>
+          </nav>
+          <article class="screen is-visible" data-screen="login">
+            <div class="screen__hero">
+              <h2>Bem-vindo de volta!</h2>
+              <p>Entre para configurar seu atendente virtual.</p>
+            </div>
+            <form class="form">
+              <label class="field">
+                <span>Email</span>
+                <input type="email" placeholder="nome@empresa.com" />
+              </label>
+              <label class="field">
+                <span>Senha</span>
+                <input type="password" placeholder="••••••••" />
+                <a href="#" class="field__link">Esqueci minha senha</a>
+              </label>
+              <button class="button button--primary" type="button">Entrar</button>
+              <div class="divider">
+                <span></span>
+                <p>ou continue com</p>
+                <span></span>
+              </div>
+              <div class="social-buttons">
+                <button class="button button--ghost" type="button">Google</button>
+                <button class="button button--ghost" type="button">Apple</button>
+              </div>
+              <p class="form__footer">
+                Ainda não tem conta? <a href="#">Crie agora</a>
+              </p>
+            </form>
+          </article>
+          <article class="screen" data-screen="dashboard">
+            <header class="screen__header">
+              <div>
+                <p class="subtitle">Seu progresso</p>
+                <h2>Faltam 2 passos</h2>
+              </div>
+              <button class="button button--ghost" type="button">Ver tutorial</button>
+            </header>
+            <div class="progress">
+              <div class="progress__bar" style="width: 60%"></div>
+            </div>
+            <ul class="checklist">
+              <li class="checklist__item is-done">
+                <span>Conta criada</span>
+                <small>Pronto</small>
+              </li>
+              <li class="checklist__item is-active">
+                <span>Alimentar aba Dados</span>
+                <small>Em andamento</small>
+              </li>
+              <li class="checklist__item">
+                <span>Testar no Simulador</span>
+                <small>Ainda não iniciado</small>
+              </li>
+              <li class="checklist__item">
+                <span>Conectar WhatsApp Business</span>
+                <small>Pendente</small>
+              </li>
+            </ul>
+            <div class="cards">
+              <article class="card">
+                <h3>Dados — O Cérebro da IA</h3>
+                <p>Preencha horários, tom de voz, produtos e FAQs para personalizar respostas.</p>
+                <button class="button button--primary" type="button">Continuar</button>
+              </article>
+              <article class="card card--secondary">
+                <h3>Dica do suporte</h3>
+                <p>Salve cada seção para liberar o próximo passo do checklist.</p>
+              </article>
+            </div>
+          </article>
+          <article class="screen" data-screen="simulator">
+            <header class="screen__header">
+              <div>
+                <p class="subtitle">Teste rápido</p>
+                <h2>Simule uma conversa</h2>
+              </div>
+              <button class="button button--ghost" type="button">Reiniciar</button>
+            </header>
+            <div class="chat">
+              <div class="message message--client">
+                <span class="message__meta">Você • agora</span>
+                <p>Oi! Quais são os sabores disponíveis hoje?</p>
+              </div>
+              <div class="message message--bot">
+                <span class="message__meta">IA • agora</span>
+                <p>
+                  Olá! Temos marguerita, calabresa, frango com catupiry e uma promoção de
+                  quatro queijos por R$ 29,90.
+                </p>
+              </div>
+              <div class="message message--client">
+                <span class="message__meta">Você • 1 min atrás</span>
+                <p>Qual o horário de entrega?</p>
+              </div>
+              <div class="message message--bot">
+                <span class="message__meta">IA • 1 min atrás</span>
+                <p>
+                  Entregamos das 18h às 23h. Se quiser agendar, é só me avisar! 😊
+                </p>
+              </div>
+            </div>
+            <form class="chat__input">
+              <input type="text" placeholder="Digite uma mensagem" />
+              <button class="button button--primary" type="button">Enviar</button>
+            </form>
+          </article>
+          <article class="screen" data-screen="connection">
+            <header class="screen__header">
+              <div>
+                <p class="subtitle">Conecte seu WhatsApp</p>
+                <h2>Escaneie o QR Code</h2>
+              </div>
+              <div class="status-chip status-chip--warning">Desconectado</div>
+            </header>
+            <div class="connection">
+              <div class="qr">
+                <div class="qr__code"></div>
+              </div>
+              <ol class="steps">
+                <li>Acesse o app WhatsApp Business.</li>
+                <li>Abra o menu <strong>Dispositivos Conectados</strong>.</li>
+                <li>Toque em <strong>Conectar um dispositivo</strong>.</li>
+                <li>Escaneie o QR code exibido aqui.</li>
+              </ol>
+            </div>
+            <button class="button button--primary" type="button">Atualizar status</button>
+          </article>
+          <article class="screen" data-screen="help">
+            <header class="screen__header">
+              <div>
+                <p class="subtitle">Suporte inteligente</p>
+                <h2>Fale conosco</h2>
+              </div>
+              <div class="status-chip status-chip--success">IA ativa</div>
+            </header>
+            <div class="chat chat--support">
+              <div class="message message--client">
+                <span class="message__meta">Você • 5 min atrás</span>
+                <p>Preciso ajustar o tom de voz, onde faço isso?</p>
+              </div>
+              <div class="message message--bot">
+                <span class="message__meta">Suporte IA • 4 min atrás</span>
+                <p>
+                  Olá! Vá até a aba <strong>Dados</strong> e abra a seção "Tom de voz". Você
+                  pode escolher entre formal, amigável ou inserir instruções personalizadas.
+                </p>
+              </div>
+              <div class="message message--bot message--highlight">
+                <span class="message__meta">Suporte IA • agora</span>
+                <p>
+                  Caso prefira, posso abrir a página agora para você finalizar. Deseja ir?
+                </p>
+              </div>
+            </div>
+            <form class="chat__input">
+              <input type="text" placeholder="Escreva sua dúvida" />
+              <button class="button button--primary" type="button">Enviar</button>
+            </form>
+          </article>
+        </div>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

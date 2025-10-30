@@ -1,0 +1,16 @@
+<svg width="240" height="120" viewBox="0 0 240 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Logotipo OMR Studio</title>
+  <desc id="desc">Balão de diálogo rosa com engrenagem branca ao lado do texto OMR Studio.</desc>
+  <g transform="translate(12 12)">
+    <path d="M72 0C110.3 0 141 28.6 141 64C141 99.4 110.3 128 72 128H62L23.5 156L35.2 118.6C14.8 107.2 0 87.1 0 64C0 28.6 31.7 0 72 0Z" fill="#FF3DA6"/>
+    <g transform="translate(40 36)">
+      <circle cx="32" cy="32" r="18" fill="white"/>
+      <path d="M32 4.5L35.5 10.3C36.5 11.9 38.3 12.7 40.1 12.3L46.9 10.8L48 18.2L41.9 21.4C40.2 22.3 39.3 24.2 39.8 26.1L41.5 32L34.3 32L32.6 26C32.1 24.1 30.5 22.7 28.6 22.6L22.4 22.3L22.8 16L28.7 15.2C30.6 14.9 32.1 13.5 32.5 11.6L33.8 5L32 4.5Z" fill="#FF3DA6" opacity="0.4"/>
+      <path d="M32 15C25.9 15 21 19.9 21 26C21 32.1 25.9 37 32 37C38.1 37 43 32.1 43 26C43 19.9 38.1 15 32 15ZM32 12C39.7 12 46 18.3 46 26C46 33.7 39.7 40 32 40C24.3 40 18 33.7 18 26C18 18.3 24.3 12 32 12ZM32 21C35.3 21 38 23.7 38 27C38 30.3 35.3 33 32 33C28.7 33 26 30.3 26 27C26 23.7 28.7 21 32 21Z" fill="#FF3DA6"/>
+    </g>
+  </g>
+  <g transform="translate(150 36)">
+    <text x="0" y="32" font-family="'Inter', 'Segoe UI', sans-serif" font-size="36" font-weight="700" fill="#1F2937">OMR</text>
+    <text x="112" y="32" font-family="'Inter', 'Segoe UI', sans-serif" font-size="36" font-weight="600" fill="#FF3DA6">Studio</text>
+  </g>
+</svg>

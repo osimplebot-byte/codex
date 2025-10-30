@@ -59,3 +59,10 @@ O dashboard é organizado em abas, como se fossem aplicativos diferentes dentro 
 - IA treinada com base nas informações do próprio cliente, garantindo atendimento personalizado.
 - Suporte contínuo para dúvidas rápidas ou ajustes mais profundos.
 
+
+## Preview da UX do Painel
+
+Um protótipo navegável das principais telas está disponível em `preview/index.html`. Para visualizar:
+
+1. Inicie um servidor estático (por exemplo, `python -m http.server 8000`) na pasta `preview`.
+2. Acesse `http://localhost:8000` e utilize as abas sob o mock de smartphone para trocar entre Login, Dashboard, Simulador, Conexão e Ajuda.
