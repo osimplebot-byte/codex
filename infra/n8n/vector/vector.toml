@@ -1,0 +1,30 @@
+[sources.docker]
+type = "docker_logs"
+include_containers = ["n8n"]
+
+[transforms.json]
+type = "remap"
+inputs = ["docker"]
+source = """
+structured = parse_json!(.message)
+.log_level = structured.level ?? "info"
+.workflow = structured.workflow ?? "unknown"
+.event = structured.event ?? "execution"
+"""
+drop_invalid = true
+
+[sinks.webhook]
+type = "http"
+inputs = ["json"]
+uri = "${N8N_LOG_WEBHOOK_URL}"
+method = "post"
+encoding.codec = "json"
+request.headers.Content-Type = "application/json"
+
+[sinks.webhook.batch]
+max_events = 200
+timeout_secs = 10
+
+[sinks.webhook.request]
+retry_initial_backoff_secs = 5
+retry_max_duration_secs = 300

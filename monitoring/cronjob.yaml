@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: evolution-api-healthcheck
+  labels:
+    app: monitoring
+spec:
+  schedule: "*/5 * * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: healthcheck
+              image: python:3.11-slim
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: SLACK_WEBHOOK_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: monitoring-secrets
+                      key: slack-webhook-url
+                - name: EVOLUTION_HEALTH_URL
+                  value: "https://evolution-api.internal/api/health"
+                - name: EVOLUTION_HEALTH_MAX_LATENCY
+                  value: "1.5"
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  pip install --no-cache-dir -r /app/requirements.txt \
+                    && python /app/evolution_health_check.py
+              volumeMounts:
+                - name: monitoring-scripts
+                  mountPath: /app
+          volumes:
+            - name: monitoring-scripts
+              configMap:
+                name: evolution-monitoring
+                items:
+                  - key: evolution_health_check.py
+                    path: evolution_health_check.py
+                  - key: requirements.txt
+                    path: requirements.txt
