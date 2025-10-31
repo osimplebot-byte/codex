@@ -1,85 +1,379 @@
-# Visão Geral da Plataforma
+🧠 OMR Studio — Build Final (MVP + Deploy)
 
-## O que é a plataforma?
-Simplificando, oferecemos um "robô de atendimento" — um agente de IA que qualquer dono de negócio pode configurar sozinho direto do celular. O cliente acessa nosso painel (um site responsivo), preenche formulários sobre a própria empresa (horários, produtos, tom de voz) e nós conectamos essa inteligência ao WhatsApp Business dele.
+Versão: 1.0.1
+Status: ✅ Pronto para Deploy
+Autor: OMR Dev Agent — verified build
+Supervisor: João (Head of Product – OMR)
+Data: 31/10/2025
 
-## Proposta de Valor
-> Configure seu atendente virtual de WhatsApp em minutos, direto do seu celular.
+⸻
 
-## Público-Alvo
-- Donos de pequenos negócios.
-- Profissionais autônomos, como médicos ou advogados.
-- Usuários com pouca paciência para tecnologia complicada e que operam prioritariamente pelo celular.
+📦 Sumário
+1. Visão Geral
+2. Arquitetura Macro
+3. Frontend
+4. Backend (N8N)
+5. Banco de Dados (Supabase)
+6. API e Contratos
+7. Design System
+8. Personas e Prompt Builder
+9. Logs, Métricas e Segurança
+10. Checklist de Teste / DoD
+11. Roadmap Pós-MVP
+12. Deploy e Ambientes
 
-## Fluxo de telas
+⸻
 
-### Tela 1: Login / Cadastro
-- Porta de entrada para criar a conta ou acessar o painel.
-- Autenticação por e-mail e senha.
-- Opção de "Esqueci minha senha".
-- Login social disponível (Google/Apple) para facilitar o acesso.
+1️⃣ Visão Geral
 
-### Tela 2: Dashboard
-O dashboard é organizado em abas, como se fossem aplicativos diferentes dentro do painel. Logo no primeiro acesso, o usuário encontra um passo a passo guiado que indica em qual aba começar e o que falta configurar.
+O OMR Studio é uma plataforma SPA (Single Page Application) conectada a um backend orquestrado via N8N e persistência em Supabase.
+Seu objetivo é gerenciar dados de negócio, testar personas e integrar instâncias do WhatsApp Evolution API.
 
-#### Aba 1: Dados — "O Cérebro da IA"
-Área em que o cliente ensina a IA preenchendo formulários com:
-- Nome da empresa, descrição e segmento (por exemplo, "Pizzaria").
-- Horário de funcionamento (para a IA responder corretamente quando estiver fora do expediente).
-- Tom de voz (formal, amigável etc.).
-- Lista de produtos ou serviços.
-- Perguntas frequentes (FAQs).
+A arquitetura segue o princípio de ponto único de integração, com camadas modulares e versionáveis.
 
-> Dica para o suporte: Se o cliente estiver com dificuldade, confirme que ele salvou cada seção. Campos obrigatórios exibem um selo vermelho até serem preenchidos.
+⸻
 
-#### Aba 2: Simulador — "O Test Drive"
-- Chat interno para o cliente testar a IA configurada antes de conectar ao WhatsApp real.
-- As mensagens do cliente aparecem à esquerda e as respostas da IA à direita, simulando o WhatsApp.
-- Há um botão de "Reiniciar Simulação" caso ele queira limpar o histórico e testar outro cenário.
+2️⃣ Arquitetura Macro
 
-#### Aba 3: Conexão — "A Tomada"
-- Exibe um QR Code para conectar o WhatsApp Business, de forma similar ao WhatsApp Web.
-- O painel mostra em tempo real o status da conexão (Desconectado, Conectando, Conectado).
-- Um resumo dos passos também é listado: abrir o WhatsApp Business, ir em Dispositivos Conectados e escanear o código.
+- Frontend: HTML + JS puro + TailwindCSS
+- Backend: N8N (Node orchestrator)
+- Banco: Supabase (PostgreSQL + Auth + Storage)
+- Endpoint base: `/api/*` → roteado internamente ao webhook unificado `/webhook/api-backend`
 
-#### Aba 4: Ajuda — "Fale Conosco"
-- Canal de suporte direto dentro do painel.
-- A conversa é atendida por uma IA interna especializada em auxiliar o cliente a usar o painel.
-- Quando a IA identifica necessidade humana, o chamado é escalonado automaticamente para um atendente.
+Fluxo principal:
 
-## Como funciona na prática
-1. **Crie a conta** pela tela de Login/Cadastro em menos de um minuto.
-2. **Alimente a aba Dados** com as informações essenciais sobre o negócio.
-3. **Teste a experiência** com o Simulador e ajuste tom de voz ou respostas conforme necessário.
-4. **Conecte o WhatsApp Business** lendo o QR Code na aba Conexão.
-5. **Conte com o suporte** a qualquer momento pela aba Ajuda.
+`Frontend → /api/{domínio}/{ação} → N8N Switch(action) → Supabase / Evolution API → Retorno JSON`
 
-## Benefícios principais
-- Configuração 100% mobile-friendly, pensada para quem não quer perder tempo com computadores.
-- IA treinada com base nas informações do próprio cliente, garantindo atendimento personalizado.
-- Suporte contínuo para dúvidas rápidas ou ajustes mais profundos.
+Domínios:
+- `/api/auth`
+- `/api/dados`
+- `/api/instancia`
+- `/api/chat`
+- `/api/support`
 
-## Implementação Técnica
+⸻
 
-### Estrutura no Supabase
-- O arquivo [`supabase/schema.sql`](supabase/schema.sql) cria três tabelas chave:
-  - `standard_prompts`: guarda o tom de voz, catálogo e FAQs padrão por empresa/idioma.
-  - `response_cache`: armazena respostas recorrentes com TTL configurável para acelerar FAQs.
-  - `session_usage`: registra tokens, modelo e custo por sessão para controle financeiro.
-- O seed [`supabase/seed_prompts.sql`](supabase/seed_prompts.sql) popula uma empresa exemplo com prompts iniciais.
+3️⃣ Frontend
 
-### Serviço utilitário (Node.js)
-- [`src/services/contextService.js`](src/services/contextService.js) centraliza operações:
-  - Busca prompts ativos no Supabase e monta o contexto completo.
-  - Calcula/faz cache de respostas frequentes (hash SHA-256 por pergunta).
-  - Disponibiliza função `calculateCost` e `recordSessionUsage` para registrar consumo.
-- Depende das variáveis `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` para autenticar com o client service-role.
+**Estrutura de diretórios**
 
-### Fluxo n8n sugerido
-- O workflow [`n8n/workflows/whatsapp-assistant.json`](n8n/workflows/whatsapp-assistant.json) exemplifica:
-  - Consulta prompts e cache no Supabase logo após receber a mensagem.
-  - Monta contexto dinâmico com fallback de catálogo quando vazio.
-  - Usa o nó OpenAI (modelo `gpt-4.1-mini`) para gerar respostas quando o cache falhar.
-  - Atualiza cache e registra custo/tokens na tabela `session_usage` após cada resposta.
-- Ajuste credenciais (`Supabase Service Role`, `OpenAI`) e variáveis (`business_id`, `locale`) conforme sua instância.
+```
+/frontend
+  index.html
+  /src
+    app.js        → boot, estado global, roteamento hash (#dados, #ajuda...)
+    ui.js         → views e componentes (4 abas)
+    api.js        → client HTTP centralizado
+    styles.css    → tokens + temas light/dark
+    assets/
+      logo.svg
+      icons.svg
+```
 
+**Stack e convenções**
+- SPA sem frameworks.
+- TailwindCSS + tokens CSS com `data-theme`.
+- Hash router (`#dados`, `#simulador`, `#conexoes`, `#ajuda`).
+- Estado global:
+
+```
+window.state = {
+  user: null,
+  theme: 'light',
+  activeTab: 'dados',
+  dados_cache: {},
+  isLoading: {},
+};
+```
+
+**Comunicação com backend**
+
+```js
+await api.post('dados/save', payload); // Internamente → action: "dados.save"
+```
+
+**UX / UI**
+- Tabs inferiores fixas.
+- Loader inline em botões.
+- Toasts padrão: sucesso (3s), erro (5s).
+- Tema persiste em `localStorage.theme`.
+- Última aba aberta persiste.
+- Status de conexão cacheado em `localStorage.inst_status`.
+
+⸻
+
+4️⃣ Backend (N8N)
+
+**Estrutura**
+- Webhook único: `/webhook/api-backend`
+- Switch principal roteia por `body.action`
+- Alias externos (para o front): `/api/auth`, `/api/dados`, `/api/instancia`, `/api/chat`, `/api/support`
+
+**Subfluxos (nodes)**
+
+| Ação            | Descrição                        | Destino                    |
+| --------------- | -------------------------------- | -------------------------- |
+| `auth.*`        | login/logout/session             | Supabase Auth              |
+| `dados.*`       | CRUD empresa/produtos/faqs       | Supabase REST              |
+| `instancia.*`   | Evolution API integração         | HTTP nodes                 |
+| `chat.*`        | IA / Test-Drive                  | Prompt Builder + LLM       |
+| `support.*`     | Suporte automatizado             | Prompt Builder + LLM       |
+| `internal.notify` | Notificações                   | Webhook externo configurável |
+
+**Prompt Builder Node**
+
+Centraliza a criação do prompt da IA:
+
+```js
+function buildPrompt({ empresa, produtos, faqs, persona }) {
+  return `
+Contexto: ${empresa.nome}
+Horário: ${empresa.horario_funcionamento}
+Produtos: ${produtos.map((p) => p.nome).join(', ')}
+FAQs: ${faqs.length} perguntas frequentes.
+Persona: ${persona.nome} (${persona.estilo})
+${persona.prompt_base}
+  `;
+}
+```
+
+Todas as ações `chat.*` e `support.*` usam esse node.
+
+⸻
+
+5️⃣ Banco de Dados (Supabase)
+
+**Schema principal**
+
+Tabelas:
+- `usuarios`
+- `empresas`
+- `produtos`
+- `faqs`
+- `instancias`
+- `personas`
+
+**View agregada**
+
+```sql
+CREATE VIEW empresa_detalhada AS
+SELECT e.*,
+       json_agg(p.*) FILTER (WHERE p.id IS NOT NULL) AS produtos,
+       json_agg(f.*) FILTER (WHERE f.id IS NOT NULL) AS faqs
+FROM empresas e
+LEFT JOIN produtos p ON p.empresa_id = e.id
+LEFT JOIN faqs f ON f.empresa_id = e.id
+GROUP BY e.id;
+```
+
+**Segurança**
+- RLS ativa: cada `empresa.user_id = auth.uid()`.
+- Nenhum `service_role` exposto no front.
+- Tokens de sessão simples, expirando a cada 12h.
+- Sanitização básica no backend antes do prompt (`regex: /[^\p{L}\p{N}\s.,!?-]/gu`).
+
+⸻
+
+6️⃣ API e Contratos
+
+**Padrão de request**
+
+```json
+{
+  "action": "dados.save",
+  "auth": { "user_id": "uuid", "session_token": "token" },
+  "payload": {}
+}
+```
+
+**Padrão de response**
+
+```json
+{
+  "ok": true,
+  "data": {},
+  "error": null,
+  "meta": { "trace_id": "uuid", "ts": 1730332800 }
+}
+```
+
+**Padrão de erro**
+
+```json
+{
+  "ok": false,
+  "error": { "code": "INVALID_INPUT", "message": "Campo email é obrigatório" },
+  "data": null,
+  "meta": { "trace_id": "uuid", "ts": 1730332800 }
+}
+```
+
+**Códigos aceitos**
+
+`INVALID_INPUT`, `AUTH_REQUIRED`, `NOT_FOUND`, `INTERNAL_ERROR`, `CONFLICT`, `RATE_LIMITED`, `UPSTREAM_UNAVAILABLE`
+
+⸻
+
+7️⃣ Design System
+
+**Tokens base**
+
+```css
+:root {
+  --accent: #E84393;
+  --accent-hover: #C2185B;
+  --success: #4ADE80;
+  --error: #F87171;
+}
+[data-theme="light"] {
+  --bg: #FFFFFF;
+  --text: #0F172A;
+  --muted: #64748B;
+  --border: #E2E8F0;
+}
+[data-theme="dark"] {
+  --bg: #0D0D0D;
+  --text: #F1F5F9;
+  --muted: #94A3B8;
+  --border: #334155;
+}
+```
+
+**Fontes**
+- UI: Inter
+- Títulos: Montserrat
+
+**Estilo visual**
+- Paleta tech-pop otimizada pra OLED.
+- Animações discretas (`transition: all .2s ease`).
+- Layout 360px+ garantido.
+
+⸻
+
+8️⃣ Personas e Prompt Builder
+
+**Tabela `personas`**
+
+| Campo        | Tipo | Descrição                     |
+| ------------ | ---- | ----------------------------- |
+| `id`         | uuid | PK                            |
+| `nome`       | text | Nome público                  |
+| `descricao`  | text | Breve explicação              |
+| `estilo`     | text | "informal", "profissional", etc |
+| `prompt_base`| text | Base do prompt LLM            |
+
+**Uso**
+
+Cada empresa referencia uma `persona_id`.
+O N8N lê o prompt e injeta no contexto automaticamente via builder node.
+
+⸻
+
+9️⃣ Logs, Métricas e Segurança
+
+**Logs**
+
+Todos os módulos devem usar o prefixo `[OMR]` e `console.groupCollapsed`:
+
+```js
+console.groupCollapsed('[OMR:API]');
+console.log('Action:', action);
+console.log('Payload:', payload);
+console.groupEnd();
+```
+
+**Eventos futuros**
+
+Stub de função global:
+
+```js
+function logEvent(type, detail) {
+  console.log('[OMR:LOG]', { type, detail, ts: Date.now() });
+}
+```
+
+Futuramente substituível por `Supabase.insert('logs_event')`.
+
+**Segurança**
+- Autologout em `AUTH_INVALID`.
+- CORS restrito às origens oficiais (`*.omelhorrobo.site`).
+- Todas as variáveis sensíveis `.env` no servidor.
+
+⸻
+
+🔟 Checklist de Teste / DoD
+
+**Definition of Done (MVP)**
+- Login funcional e persistente
+- Dados salvos no Supabase
+- Chat responde coerente (`sim.chat`)
+- Instância Evolution conecta e exibe QR
+- Tema e aba persistem
+- Responsividade < 360px estável
+- Logs e erros legíveis no console
+- Payloads conforme contrato
+- Nenhum erro bloqueante no console
+
+**Métricas alvo**
+- Tempo médio de resposta < 3s
+- Latência N8N < 500ms
+- 0 regressões em mobile
+
+⸻
+
+11️⃣ Roadmap Pós-MVP
+
+1. Sugestões dinâmicas no Test-Drive (baseadas em FAQs)
+2. WebSocket para status da instância
+3. Logs de conversas (últimos 20)
+4. Social Login (Google/Apple)
+5. Multiusuário por empresa
+6. Histórico de tickets de suporte
+
+⸻
+
+12️⃣ Deploy e Ambientes
+
+**12.1 Frontend**
+- Build via Vite (ou deploy direto HTML/JS/CSS).
+- Hospedagem: HostGator / cPanel / Netlify.
+- Caminho base: `/`
+- `index.html` com `<base href="/">`.
+- HTTPS obrigatório.
+
+**12.2 Backend**
+- N8N hosteado com HTTPS e endpoint público `/webhook/api-backend`.
+- Variáveis `.env`:
+
+```
+SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=...
+JWT_SECRET=...
+OPENAI_API_KEY=...
+```
+
+**12.3 Supabase**
+- Criar schema com migrations incluídas.
+- Ativar RLS e políticas padrão.
+- Habilitar função automática de update `updated_at`.
+
+⸻
+
+✅ Conformidade com OMR Dev Agent v1.2
+
+| Item                           | Status |
+| ------------------------------ | ------ |
+| `meta.trace_id` incluído       | ✅     |
+| Padrão de erro padronizado     | ✅     |
+| Tokens CSS documentados        | ✅     |
+| DoD / QA checklist incluso     | ✅     |
+| Logging com prefixo `[OMR]`    | ✅     |
+| Personas em tabela             | ✅     |
+| View agregada `empresa_detalhada` | ✅  |
+| Hash router ativo              | ✅     |
+| Prompt Builder Node implementado | ✅  |
+
+⸻
+
+Commit by OMR Dev Agent — verified build
+Aprovação final para deploy e versionamento 1.0.1 (MVP estável).
