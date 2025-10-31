@@ -1,0 +1,56 @@
+version: "3.8"
+
+services:
+  n8n:
+    image: n8nio/n8n:1.36.0
+    container_name: n8n
+    restart: unless-stopped
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
+      - N8N_LOG_LEVEL=info
+      - N8N_LOG_OUTPUT=json
+      - N8N_METRICS=true
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
+      - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+      - GENERIC_TIMEZONE=America/Sao_Paulo
+      - WEBHOOK_URL=${N8N_WEBHOOK_URL}
+      - N8N_LOG_SYSLOG_ADDRESS=${N8N_LOG_SYSLOG_ADDRESS:-udp://logs.internal:514}
+      - N8N_LOG_WEBHOOK_URL=${N8N_LOG_WEBHOOK_URL:-}
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: syslog
+      options:
+        syslog-address: "${N8N_LOG_SYSLOG_ADDRESS:-udp://logs.internal:514}"
+        syslog-format: rfc5424
+        tag: n8n
+
+  log-webhook-forwarder:
+    image: timberio/vector:0.34.1-debian
+    container_name: n8n-log-forwarder
+    restart: unless-stopped
+    environment:
+      - N8N_LOG_WEBHOOK_URL=${N8N_LOG_WEBHOOK_URL:-}
+    volumes:
+      - ./vector/vector.toml:/etc/vector/vector.toml:ro
+    depends_on:
+      - n8n
+    healthcheck:
+      test: ["CMD", "vector", "validate", "/etc/vector/vector.toml"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  n8n_data:

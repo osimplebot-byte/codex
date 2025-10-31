@@ -1,0 +1,40 @@
+# Supabase observability configuration
+
+[logging]
+level = "info"
+retention_days = 14
+formatter = "json"
+
+[logging.audit]
+enabled = true
+destination = "s3"
+include_request_body = false
+
+[logging.audit.filters]
+# Ignora eventos de heartbeat para reduzir ruído
+exclude_event_types = ["realtime_heartbeat"]
+
+[logging.audit.s3]
+bucket = "central-audit-logs"
+region = "us-east-1"
+path_prefix = "supabase/audit/"
+access_key_id = "${AUDIT_LOG_AWS_ACCESS_KEY_ID}"
+secret_access_key = "${AUDIT_LOG_AWS_SECRET_ACCESS_KEY}"
+server_side_encryption = "AES256"
+max_upload_interval_seconds = 60
+
+[logging.metrics]
+provider = "datadog"
+api_key = "${DATADOG_API_KEY}"
+namespace = "supabase"
+
+[logflare]
+enabled = true
+source_name = "supabase-edge"
+api_key = "${LOGFLARE_API_KEY}"
+batch_size = 500
+flush_interval_seconds = 15
+
+[logflare.forwarding]
+# Permite espelhar audit logs no Logflare caso necessário
+include_audit_logs = true

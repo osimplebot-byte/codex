@@ -1,0 +1,24 @@
+logging:
+  level: info
+  format: json
+  request_id_header: X-Request-Id
+  sinks:
+    - type: stdout
+      include_health_checks: false
+    - type: s3
+      bucket: central-audit-logs
+      prefix: services/evolution/
+      region: us-east-1
+      access_key_id: ${EVOLUTION_AWS_ACCESS_KEY_ID}
+      secret_access_key: ${EVOLUTION_AWS_SECRET_ACCESS_KEY}
+      retention_days: 45
+    - type: loki
+      endpoint: ${LOKI_ENDPOINT}
+      basic_auth:
+        user: ${LOKI_USER}
+        password: ${LOKI_PASSWORD}
+
+metrics:
+  enabled: true
+  provider: datadog
+  api_key: ${DATADOG_API_KEY}
