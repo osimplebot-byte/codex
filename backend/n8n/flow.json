@@ -1,0 +1,276 @@
+{
+  "name": "OMR Studio API Gateway",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "api-backend",
+        "responseMode": "lastNode",
+        "options": {
+          "responseData": {
+            "responseContentType": "application/json"
+          }
+        }
+      },
+      "id": "Webhook",
+      "name": "Webhook /webhook/api-backend",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "source": "body.action"
+      },
+      "id": "SwitchAction",
+      "name": "Switch Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 2,
+      "position": [420, 300],
+      "options": {
+        "default": "route.support"
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "const { empresa, produtos, faqs, persona } = items[0].json.payload;\nconst context = { empresa, produtos, faqs, persona };\nreturn [{ json: { prompt: `Contexto: ${empresa?.nome || ''}\nProdutos: ${(produtos || []).map(p => p.nome).join(', ')}\nFAQs: ${(faqs || []).length} perguntas\nPersona: ${persona?.nome || ''} (${persona?.estilo || ''})\n${persona?.prompt_base || ''}` } }];"
+      },
+      "id": "PromptBuilder",
+      "name": "Prompt Builder",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [860, 120]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": "public",
+        "table": "empresas",
+        "columns": ["id", "nome", "descricao", "whatsapp", "website", "horario_funcionamento"],
+        "returning": "representation"
+      },
+      "id": "SupabaseEmpresa",
+      "name": "Supabase Empresas",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [860, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "SupabaseCreds",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$json.payload.url}}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json.payload.body}}"
+      },
+      "id": "EvolutionAPI",
+      "name": "Evolution API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [860, 480]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "ok",
+              "value": "={{$json.ok ?? true}}"
+            },
+            {
+              "name": "meta",
+              "value": "={{Object.assign({ trace_id: $json.meta?.trace_id || $json.id || $json.eventId || $json.payload?.trace_id || $json.headers['x-trace-id'] || $execution.id, ts: Date.now() })}}"
+            }
+          ]
+        }
+      },
+      "id": "ResponseFormatter",
+      "name": "Response Formatter",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [1080, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const action = item.json.action || '';\nswitch (true) {\n  case action.startsWith('auth.'):\n    return [{ json: { route: 'route.auth' } }];\n  case action.startsWith('dados.'):\n    return [{ json: { route: 'route.dados' } }];\n  case action.startsWith('instancia.'):\n    return [{ json: { route: 'route.instancia' } }];\n  case action.startsWith('chat.'):\n    return [{ json: { route: 'route.chat' } }];\n  case action.startsWith('support.'):\n    return [{ json: { route: 'route.support' } }];\n  default:\n    return [{ json: { route: 'route.unknown' } }];\n}"
+      },
+      "id": "RouteResolver",
+      "name": "Route Resolver",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.route}}",
+              "operation": "equal",
+              "value2": "route.auth"
+            }
+          ]
+        }
+      },
+      "id": "IfAuth",
+      "name": "Route Auth",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [820, 40]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.route}}",
+              "operation": "equal",
+              "value2": "route.dados"
+            }
+          ]
+        }
+      },
+      "id": "IfDados",
+      "name": "Route Dados",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [820, 220]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.route}}",
+              "operation": "equal",
+              "value2": "route.instancia"
+            }
+          ]
+        }
+      },
+      "id": "IfInstancia",
+      "name": "Route Instancia",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [820, 380]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.route}}",
+              "operation": "equal",
+              "value2": "route.chat"
+            }
+          ]
+        }
+      },
+      "id": "IfChat",
+      "name": "Route Chat",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [820, 520]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.route}}",
+              "operation": "equal",
+              "value2": "route.support"
+            }
+          ]
+        }
+      },
+      "id": "IfSupport",
+      "name": "Route Support",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [820, 660]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{ json: { ok: true, data: { session: 'jwt', user_id: 'uuid' } } }];"
+      },
+      "id": "AuthLogin",
+      "name": "Auth Login",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [1000, 40]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = items[0].json.payload;\nreturn [{ json: { ok: true, data: { empresa: payload.empresa, produtos: payload.produtos, faqs: payload.faqs } } }];"
+      },
+      "id": "DadosBootstrap",
+      "name": "Dados Bootstrap",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [1000, 220]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{ json: { ok: true, data: { status: 'aguardando_scan', qr: 'data:image/png;base64,...' } } }];"
+      },
+      "id": "InstanciaQR",
+      "name": "Instância QR",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [1000, 380]
+    },
+    {
+      "parameters": {
+        "functionCode": "const prompt = items[0].json.prompt;\nreturn [{ json: { ok: true, data: { mensagem: `Resposta simulada para: ${items[0].json.payload?.mensagem || ''}` } } }];"
+      },
+      "id": "ChatSimular",
+      "name": "Chat Simular",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [1000, 520]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{ json: { ok: true, data: { message: 'Chamado encaminhado' } } }];"
+      },
+      "id": "SupportHandler",
+      "name": "Support Handler",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [1000, 660]
+    }
+  ],
+  "connections": {
+    "Webhook /webhook/api-backend": {
+      "main": [[{ "node": "Route Resolver", "type": "main", "index": 0 }]]
+    },
+    "Route Resolver": {
+      "main": [[
+        { "node": "Route Auth", "type": "main", "index": 0 },
+        { "node": "Route Dados", "type": "main", "index": 0 },
+        { "node": "Route Instancia", "type": "main", "index": 0 },
+        { "node": "Route Chat", "type": "main", "index": 0 },
+        { "node": "Route Support", "type": "main", "index": 0 }
+      ]]
+    },
+    "Route Auth": { "main": [[{ "node": "Auth Login", "type": "main", "index": 0 }]] },
+    "Route Dados": { "main": [[{ "node": "Supabase Empresas", "type": "main", "index": 0 }]] },
+    "Route Instancia": { "main": [[{ "node": "Instância QR", "type": "main", "index": 0 }]] },
+    "Route Chat": { "main": [[{ "node": "Prompt Builder", "type": "main", "index": 0 }]] },
+    "Route Support": { "main": [[{ "node": "Support Handler", "type": "main", "index": 0 }]] },
+    "Prompt Builder": { "main": [[{ "node": "Chat Simular", "type": "main", "index": 0 }]] },
+    "Supabase Empresas": { "main": [[{ "node": "Dados Bootstrap", "type": "main", "index": 0 }]] },
+    "Instância QR": { "main": [[{ "node": "Response Formatter", "type": "main", "index": 0 }]] },
+    "Dados Bootstrap": { "main": [[{ "node": "Response Formatter", "type": "main", "index": 0 }]] },
+    "Auth Login": { "main": [[{ "node": "Response Formatter", "type": "main", "index": 0 }]] },
+    "Chat Simular": { "main": [[{ "node": "Response Formatter", "type": "main", "index": 0 }]] },
+    "Support Handler": { "main": [[{ "node": "Response Formatter", "type": "main", "index": 0 }]] }
+  }
+}

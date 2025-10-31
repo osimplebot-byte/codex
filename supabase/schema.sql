@@ -1,47 +1,100 @@
--- Schema for storing standard prompts, FAQ cache, and session usage metrics
-create table if not exists public.standard_prompts (
-    id uuid primary key default gen_random_uuid(),
-    business_id uuid not null,
-    prompt_type text not null check (prompt_type in ('brand_voice', 'catalog', 'faqs')),
-    locale text not null default 'pt-BR',
-    content jsonb not null,
-    version int not null default 1,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now(),
-    constraint standard_prompts_business_type_unique unique (business_id, prompt_type, locale, version)
+-- Schema base para OMR Studio
+create extension if not exists "uuid-ossp";
+
+create table if not exists usuarios (
+  id uuid primary key default uuid_generate_v4(),
+  email text unique not null,
+  senha_hash text not null,
+  created_at timestamp with time zone default timezone('utc', now()),
+  updated_at timestamp with time zone default timezone('utc', now())
 );
 
-create index if not exists standard_prompts_business_idx on public.standard_prompts (business_id, prompt_type, locale);
-
-create table if not exists public.response_cache (
-    id uuid primary key default gen_random_uuid(),
-    business_id uuid not null,
-    locale text not null default 'pt-BR',
-    question_hash text not null,
-    question text not null,
-    answer text not null,
-    metadata jsonb default '{}'::jsonb,
-    expires_at timestamptz,
-    created_at timestamptz not null default now(),
-    constraint response_cache_business_hash_unique unique (business_id, locale, question_hash)
+create table if not exists personas (
+  id uuid primary key default uuid_generate_v4(),
+  nome text not null,
+  descricao text,
+  estilo text not null default 'informal',
+  prompt_base text not null,
+  created_at timestamp with time zone default timezone('utc', now()),
+  updated_at timestamp with time zone default timezone('utc', now())
 );
 
-create index if not exists response_cache_business_idx on public.response_cache (business_id, locale);
-create index if not exists response_cache_expires_idx on public.response_cache (expires_at);
-
-create table if not exists public.session_usage (
-    id uuid primary key default gen_random_uuid(),
-    session_id text not null,
-    business_id uuid not null,
-    model text not null,
-    prompt_tokens int not null default 0,
-    completion_tokens int not null default 0,
-    total_tokens int generated always as (prompt_tokens + completion_tokens) stored,
-    cost_usd numeric(10,4) not null default 0,
-    currency text not null default 'USD',
-    metadata jsonb default '{}'::jsonb,
-    created_at timestamptz not null default now(),
-    constraint session_usage_unique unique (session_id, created_at)
+create table if not exists empresas (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references usuarios(id) on delete cascade,
+  nome text not null,
+  descricao text,
+  whatsapp text,
+  website text,
+  horario_funcionamento text,
+  persona_id uuid references personas(id),
+  created_at timestamp with time zone default timezone('utc', now()),
+  updated_at timestamp with time zone default timezone('utc', now())
 );
 
-create index if not exists session_usage_business_idx on public.session_usage (business_id, created_at desc);
+create table if not exists produtos (
+  id uuid primary key default uuid_generate_v4(),
+  empresa_id uuid references empresas(id) on delete cascade,
+  titulo text not null,
+  descricao text,
+  preco numeric,
+  created_at timestamp with time zone default timezone('utc', now()),
+  updated_at timestamp with time zone default timezone('utc', now())
+);
+
+create table if not exists faqs (
+  id uuid primary key default uuid_generate_v4(),
+  empresa_id uuid references empresas(id) on delete cascade,
+  pergunta text not null,
+  resposta text not null,
+  created_at timestamp with time zone default timezone('utc', now()),
+  updated_at timestamp with time zone default timezone('utc', now())
+);
+
+create table if not exists instancias (
+  id uuid primary key default uuid_generate_v4(),
+  empresa_id uuid references empresas(id) on delete cascade,
+  status text not null default 'desconectado',
+  numero text,
+  qr_code text,
+  connected_at timestamp with time zone,
+  created_at timestamp with time zone default timezone('utc', now()),
+  updated_at timestamp with time zone default timezone('utc', now())
+);
+
+create view if not exists empresa_detalhada as
+select e.*, 
+  coalesce(json_agg(distinct p) filter (where p.id is not null), '[]'::json) as produtos,
+  coalesce(json_agg(distinct f) filter (where f.id is not null), '[]'::json) as faqs
+from empresas e
+left join produtos p on p.empresa_id = e.id
+left join faqs f on f.empresa_id = e.id
+group by e.id;
+
+create or replace function public.set_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = timezone('utc', now());
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger set_timestamp
+before update on usuarios
+for each row execute procedure public.set_updated_at();
+
+create trigger set_timestamp_empresas
+before update on empresas
+for each row execute procedure public.set_updated_at();
+
+create trigger set_timestamp_produtos
+before update on produtos
+for each row execute procedure public.set_updated_at();
+
+create trigger set_timestamp_faqs
+before update on faqs
+for each row execute procedure public.set_updated_at();
+
+create trigger set_timestamp_instancias
+before update on instancias
+for each row execute procedure public.set_updated_at();

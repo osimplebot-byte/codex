@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OMR Studio</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Montserrat:wght@600;700&display=swap" />
+    <link rel="stylesheet" href="src/styles.css" />
+  </head>
+  <body>
+    <div id="sprite-host" hidden></div>
+    <div id="app">
+      <header class="app-header">
+        <img src="src/assets/logo.svg" alt="OMR Studio" class="logo" />
+        <div class="header-actions">
+          <button id="theme-toggle" class="ghost" aria-label="Alternar tema">🌗</button>
+          <button id="logout-btn" class="ghost" aria-label="Sair">Sair</button>
+        </div>
+      </header>
+      <main id="view" class="view"></main>
+      <nav class="bottom-nav" aria-label="Navegação principal">
+        <button data-tab="dados" class="nav-btn">
+          <svg aria-hidden="true"><use href="#icon-dados"></use></svg>
+          <span>Dados</span>
+        </button>
+        <button data-tab="simulador" class="nav-btn">
+          <svg aria-hidden="true"><use href="#icon-simulador"></use></svg>
+          <span>Test-Drive</span>
+        </button>
+        <button data-tab="conexoes" class="nav-btn">
+          <svg aria-hidden="true"><use href="#icon-conexoes"></use></svg>
+          <span>Conexões</span>
+        </button>
+        <button data-tab="ajuda" class="nav-btn">
+          <svg aria-hidden="true"><use href="#icon-ajuda"></use></svg>
+          <span>Ajuda</span>
+        </button>
+      </nav>
+      <div id="toast" role="status" aria-live="polite"></div>
+    </div>
+    <script type="module" src="src/app.js"></script>
+  </body>
+</html>
