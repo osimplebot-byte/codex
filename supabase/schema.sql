@@ -1,47 +1,126 @@
--- Schema for storing standard prompts, FAQ cache, and session usage metrics
-create table if not exists public.standard_prompts (
+-- OMR Studio MVP schema
+create extension if not exists pgcrypto;
+create extension if not exists moddatetime schema extensions;
+
+create table if not exists public.usuarios (
     id uuid primary key default gen_random_uuid(),
-    business_id uuid not null,
-    prompt_type text not null check (prompt_type in ('brand_voice', 'catalog', 'faqs')),
-    locale text not null default 'pt-BR',
-    content jsonb not null,
-    version int not null default 1,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now(),
-    constraint standard_prompts_business_type_unique unique (business_id, prompt_type, locale, version)
+    email text not null unique,
+    password_hash text,
+    created_at timestamptz not null default now()
 );
 
-create index if not exists standard_prompts_business_idx on public.standard_prompts (business_id, prompt_type, locale);
-
-create table if not exists public.response_cache (
+create table if not exists public.empresas (
     id uuid primary key default gen_random_uuid(),
-    business_id uuid not null,
-    locale text not null default 'pt-BR',
-    question_hash text not null,
-    question text not null,
-    answer text not null,
-    metadata jsonb default '{}'::jsonb,
-    expires_at timestamptz,
+    user_id uuid not null references public.usuarios (id) on delete cascade,
+    nome text not null,
+    tipo text,
+    horario_funcionamento text,
+    contatos_extras text,
+    endereco text,
+    observacoes text,
+    persona text not null default 'josi',
     created_at timestamptz not null default now(),
-    constraint response_cache_business_hash_unique unique (business_id, locale, question_hash)
+    updated_at timestamptz not null default now()
 );
 
-create index if not exists response_cache_business_idx on public.response_cache (business_id, locale);
-create index if not exists response_cache_expires_idx on public.response_cache (expires_at);
+create trigger set_empresas_updated
+    before update on public.empresas
+    for each row execute procedure moddatetime(updated_at);
 
-create table if not exists public.session_usage (
+create table if not exists public.produtos (
     id uuid primary key default gen_random_uuid(),
-    session_id text not null,
-    business_id uuid not null,
-    model text not null,
-    prompt_tokens int not null default 0,
-    completion_tokens int not null default 0,
-    total_tokens int generated always as (prompt_tokens + completion_tokens) stored,
-    cost_usd numeric(10,4) not null default 0,
-    currency text not null default 'USD',
-    metadata jsonb default '{}'::jsonb,
+    empresa_id uuid not null references public.empresas (id) on delete cascade,
+    nome text not null,
+    descricao text,
+    preco numeric(12,2),
     created_at timestamptz not null default now(),
-    constraint session_usage_unique unique (session_id, created_at)
+    updated_at timestamptz not null default now()
 );
 
-create index if not exists session_usage_business_idx on public.session_usage (business_id, created_at desc);
+create trigger set_produtos_updated
+    before update on public.produtos
+    for each row execute procedure moddatetime(updated_at);
+
+create table if not exists public.faqs (
+    id uuid primary key default gen_random_uuid(),
+    empresa_id uuid not null references public.empresas (id) on delete cascade,
+    pergunta text not null,
+    resposta text not null,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
+);
+
+create trigger set_faqs_updated
+    before update on public.faqs
+    for each row execute procedure moddatetime(updated_at);
+
+create table if not exists public.instancias (
+    id uuid primary key default gen_random_uuid(),
+    empresa_id uuid not null references public.empresas (id) on delete cascade,
+    evolution_instance_id text not null unique,
+    status text not null default 'desconectado',
+    settings jsonb not null default '{}',
+    last_event jsonb,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
+);
+
+create trigger set_instancias_updated
+    before update on public.instancias
+    for each row execute procedure moddatetime(updated_at);
+
+-- Row Level Security
+alter table public.empresas enable row level security;
+alter table public.produtos enable row level security;
+alter table public.faqs enable row level security;
+alter table public.instancias enable row level security;
+
+create policy "Usuário acessa apenas sua empresa"
+    on public.empresas
+    using (auth.uid() = user_id)
+    with check (auth.uid() = user_id);
+
+create policy "Usuário acessa apenas seus produtos"
+    on public.produtos
+    using (
+        exists(
+            select 1 from public.empresas e
+            where e.id = produtos.empresa_id and e.user_id = auth.uid()
+        )
+    )
+    with check (
+        exists(
+            select 1 from public.empresas e
+            where e.id = produtos.empresa_id and e.user_id = auth.uid()
+        )
+    );
+
+create policy "Usuário acessa apenas suas FAQs"
+    on public.faqs
+    using (
+        exists(
+            select 1 from public.empresas e
+            where e.id = faqs.empresa_id and e.user_id = auth.uid()
+        )
+    )
+    with check (
+        exists(
+            select 1 from public.empresas e
+            where e.id = faqs.empresa_id and e.user_id = auth.uid()
+        )
+    );
+
+create policy "Usuário acessa apenas suas instâncias"
+    on public.instancias
+    using (
+        exists(
+            select 1 from public.empresas e
+            where e.id = instancias.empresa_id and e.user_id = auth.uid()
+        )
+    )
+    with check (
+        exists(
+            select 1 from public.empresas e
+            where e.id = instancias.empresa_id and e.user_id = auth.uid()
+        )
+    );

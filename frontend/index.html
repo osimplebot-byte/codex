@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OMR Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body class="bg-surface text-text font-inter min-h-screen">
+    <div id="app" class="flex flex-col min-h-screen">
+      <header class="px-6 py-4 border-b border-border flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <img src="./src/assets/logo.svg" alt="OMR Studio" class="h-9" />
+          <div>
+            <h1 class="text-xl font-semibold tracking-tight">OMR Studio</h1>
+            <p class="text-sm text-muted" id="companyLabel">Configure e conecte sua operação</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <button id="themeToggle" class="theme-toggle" aria-label="Alterar tema"></button>
+          <button id="logoutButton" class="btn-secondary hidden">Sair</button>
+        </div>
+      </header>
+
+      <main id="viewContainer" class="flex-1 overflow-y-auto">
+        <!-- Conteúdo dinâmico -->
+      </main>
+
+      <nav class="border-t border-border bg-surface-elevated">
+        <ul class="grid grid-cols-4 text-center text-sm" id="tabNavigation">
+          <li><button data-tab="dados" class="tab-link is-active">Dados</button></li>
+          <li><button data-tab="test-drive" class="tab-link">Test-Drive</button></li>
+          <li><button data-tab="conexoes" class="tab-link">Conexões</button></li>
+          <li><button data-tab="ajuda" class="tab-link">Ajuda</button></li>
+        </ul>
+      </nav>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
+
+    <div id="onboardingOverlay" class="onboarding hidden" role="dialog" aria-modal="true">
+      <div class="onboarding-card">
+        <h2 class="text-lg font-semibold mb-2">Boas-vindas ao OMR Studio</h2>
+        <p id="onboardingStepText" class="text-sm text-muted"></p>
+        <div class="flex justify-end gap-2 mt-6">
+          <button id="onboardingSkip" class="btn-tertiary">Pular</button>
+          <button id="onboardingNext" class="btn-primary">Próximo</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>

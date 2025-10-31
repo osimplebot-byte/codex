@@ -1,0 +1,5 @@
+<svg width="120" height="36" viewBox="0 0 120 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="36" height="36" rx="12" fill="#D81B60" />
+  <path d="M12 18c0-3.314 2.686-6 6-6h12v12H18c-3.314 0-6-2.686-6-6Z" fill="white" opacity="0.9" />
+  <text x="44" y="23" font-family="Montserrat, sans-serif" font-size="18" font-weight="600" fill="#D81B60">OMR</text>
+</svg>

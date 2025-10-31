@@ -1,0 +1,143 @@
+{
+  "name": "OMR Studio MVP",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "api-backend"
+      },
+      "id": "Webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 400]
+    },
+    {
+      "parameters": {
+        "propertyName": "body.action"
+      },
+      "id": "Switch",
+      "name": "Switch action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 2,
+      "position": [440, 400]
+    },
+    {
+      "parameters": {
+        "operation": "postgres",
+        "postgresQuery": "select u.id, u.email from usuarios u where u.email = :email limit 1"
+      },
+      "id": "Auth Login",
+      "name": "Auth • Login",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 2,
+      "position": [700, 120]
+    },
+    {
+      "parameters": {
+        "operation": "postgres",
+        "postgresQuery": "select e.*, array(select row_to_json(p) from produtos p where p.empresa_id = e.id) as produtos, array(select row_to_json(f) from faqs f where f.empresa_id = e.id) as faqs from empresas e where e.user_id = :user_id limit 1"
+      },
+      "id": "Dados Get",
+      "name": "Dados • Get",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 2,
+      "position": [700, 260]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Compose prompt with persona and company context\nconst { persona, message } = $json.payload;\nconst empresa = $json.meta.empresa;\nreturn [{ persona, message, empresa }];"
+      },
+      "id": "Sim Compose",
+      "name": "Simulador • Compose",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [700, 400]
+    },
+    {
+      "parameters": {
+        "operation": "callFunction",
+        "functionCode": "// TODO: chamar Evolution API / provider LLM\nreturn items;"
+      },
+      "id": "Sim LLM",
+      "name": "Simulador • LLM",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [920, 400]
+    },
+    {
+      "parameters": {
+        "operation": "postgres",
+        "postgresQuery": "select * from instancias where empresa_id = :empresa_id limit 1"
+      },
+      "id": "Inst Status",
+      "name": "Instância • Status",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 2,
+      "position": [700, 540]
+    },
+    {
+      "parameters": {
+        "functionCode": "const { message } = $json.payload;\nreturn [{ role: 'bot', reply: `Suporte automático: ${message}` }];"
+      },
+      "id": "Support Bot",
+      "name": "Suporte • Bot",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [700, 680]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch action": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Auth • Login",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Dados • Get",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Simulador • Compose",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Instância • Status",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Suporte • Bot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

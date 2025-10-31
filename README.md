@@ -61,25 +61,32 @@ O dashboard é organizado em abas, como se fossem aplicativos diferentes dentro 
 
 ## Implementação Técnica
 
+### Frontend (Vanilla JS + Tailwind CDN)
+- A pasta [`frontend/`](frontend/) concentra o MVP do painel SPA.
+- [`frontend/index.html`](frontend/index.html) carrega Tailwind via CDN, aplica as fontes Inter/Montserrat e contém a estrutura base (header, tabs inferiores, overlay de onboarding).
+- Em [`frontend/src/app.js`](frontend/src/app.js) vivem o roteamento por abas, gerenciamento de tema (localStorage), estado global (`window.state`) e integrações com a API unificada (`/webhook/api-backend`).
+- [`frontend/src/ui.js`](frontend/src/ui.js) centraliza o render das quatro views, componentes utilitários (toasts, loaders) e clients auxiliares para cada ação (`dados.save`, `sim.chat`, `inst.update`, `support.chat`).
+- [`frontend/src/styles.css`](frontend/src/styles.css) declara os tokens do design system (cores claras/escuras, botões, toasts, toggles) e garante responsividade em 360px.
+- Assets leves vivem em [`frontend/src/assets/`](frontend/src/assets/) (`logo.svg` e `icons.svg`).
+
 ### Estrutura no Supabase
-- O arquivo [`supabase/schema.sql`](supabase/schema.sql) cria três tabelas chave:
-  - `standard_prompts`: guarda o tom de voz, catálogo e FAQs padrão por empresa/idioma.
-  - `response_cache`: armazena respostas recorrentes com TTL configurável para acelerar FAQs.
-  - `session_usage`: registra tokens, modelo e custo por sessão para controle financeiro.
-- O seed [`supabase/seed_prompts.sql`](supabase/seed_prompts.sql) popula uma empresa exemplo com prompts iniciais.
+- O schema do MVP está em [`supabase/schema.sql`](supabase/schema.sql), com tabelas enxutas alinhadas ao contrato:
+  - `usuarios`: autenticação por e-mail/senha.
+  - `empresas`: dados gerais do negócio + persona.
+  - `produtos` e `faqs`: listas relacionadas à empresa.
+  - `instancias`: informações da integração com a Evolution API.
+- Todas as tabelas sensíveis possuem RLS “o que é meu é meu”, validando `auth.uid()` ↔ `user_id`.
+- Triggers `moddatetime` mantêm os campos `updated_at` sincronizados automaticamente.
 
 ### Serviço utilitário (Node.js)
-- [`src/services/contextService.js`](src/services/contextService.js) centraliza operações:
-  - Busca prompts ativos no Supabase e monta o contexto completo.
-  - Calcula/faz cache de respostas frequentes (hash SHA-256 por pergunta).
-  - Disponibiliza função `calculateCost` e `recordSessionUsage` para registrar consumo.
-- Depende das variáveis `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` para autenticar com o client service-role.
+- [`src/services/contextService.js`](src/services/contextService.js) permanece disponível para cenários que precisem montar prompts compostos, cachear respostas e registrar custo de sessões em Supabase.
+- Utilize as variáveis `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` antes de rodar qualquer script Node.
 
 ### Fluxo n8n sugerido
-- O workflow [`n8n/workflows/whatsapp-assistant.json`](n8n/workflows/whatsapp-assistant.json) exemplifica:
-  - Consulta prompts e cache no Supabase logo após receber a mensagem.
-  - Monta contexto dinâmico com fallback de catálogo quando vazio.
-  - Usa o nó OpenAI (modelo `gpt-4.1-mini`) para gerar respostas quando o cache falhar.
-  - Atualiza cache e registra custo/tokens na tabela `session_usage` após cada resposta.
-- Ajuste credenciais (`Supabase Service Role`, `OpenAI`) e variáveis (`business_id`, `locale`) conforme sua instância.
+- O blueprint inicial está em [`n8n/workflows/omr-studio-mvp.json`](n8n/workflows/omr-studio-mvp.json):
+  - Webhook único `/webhook/api-backend` → Switch por `body.action`.
+  - Nós Supabase para `auth.login`, `dados.get` e leituras de instância.
+  - Funções placeholders para orquestrar Evolution API / LLM no `sim.chat`.
+  - Nó de suporte que pode ser expandido para heurísticas de escalonamento.
+- Ajuste credenciais (Supabase Service Role, Evolution API, provedores LLM) no painel do n8n antes de publicar.
 
